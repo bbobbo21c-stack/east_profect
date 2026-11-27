@@ -91,7 +91,7 @@
     return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
   }
   function composeForm() {
-    return '<section class="panel compose-panel"><div class="panel-head"><div><h2>보직별 인계 기록 작성</h2><p>작성한 내용은 이 브라우저에 저장되는 실습용 기록입니다.</p></div><a class="text-link" href="list.html">닫기 ×</a></div><form id="compose-form" class="compose-form"><div class="filter-grid"><div class="field"><label for="record-position">보직</label><select id="record-position" name="position" required><option value="">보직 선택</option>' + positions.map(item => '<option value="' + escapeHtml(item) + '">' + escapeHtml(item) + '</option>').join('') + '</select></div><div class="field"><label for="record-date">근무 날짜</label><input id="record-date" name="date" type="date" value="' + localDate() + '" required></div><div class="field"><label for="record-team">근무조</label><select id="record-team" name="team" required>' + ['A','B','C','D','E'].map(team => '<option value="' + team + '조"' + (currentUser().team === team + '조' ? ' selected' : '') + '>' + team + '조</option>').join('') + '</select></div><div class="field"><label for="record-shift">근무 형태</label><select id="record-shift" name="shiftType" required><option>주간</option><option>야간</option></select></div><div class="field"><label for="record-author">작성자</label><input id="record-author" name="author" value="" placeholder="이름을 입력하세요" maxlength="80" required></div><div class="field"><label for="record-equipment">설비명</label><input id="record-equipment" name="equipment" maxlength="80" placeholder="예: 보일러 급수펌프 A" required></div><div class="field"><label for="record-category">카테고리</label><select id="record-category" name="category" required><option value="">카테고리 선택</option>' + categories.map(item => '<option value="' + item + '">' + item + '</option>').join('') + '</select></div><div class="field"><label for="record-importance">중요도</label><select id="record-importance" name="importance" required><option>일반</option><option>중요</option><option>긴급</option></select></div><div class="field full"><label for="record-summary">주요 전달사항</label><textarea id="record-summary" name="summary" rows="2" maxlength="500" required placeholder="다음 근무조에 전달할 핵심 내용을 입력하세요."></textarea></div><div class="field full"><label for="record-notes">특이사항</label><textarea id="record-notes" name="notes" rows="3" maxlength="1000" placeholder="확인한 특이사항을 입력하세요."></textarea></div><div class="field full"><label for="record-action-status">조치 상태</label><select id="record-action-status" name="actionStatus" required><option value="">조치 상태 선택</option><option>작업완료</option><option>작업 중</option><option>조치 중</option><option>조치예정</option><option>추후예정</option></select></div><div class="field" id="action-date-field" hidden><label for="record-action-date-mode">추후 조치 예정일</label><select id="record-action-date-mode" name="actionDateMode"><option value="date">날짜 선택</option><option value="undecided">미정</option></select><input id="record-action-date" name="actionDate" type="date" aria-label="추후 조치 날짜"></div><div class="field full"><label for="record-actions">조치사항 내용</label><textarea id="record-actions" name="actions" rows="3" maxlength="1000" placeholder="진행한 조치 또는 후속 확인 사항을 입력하세요."></textarea></div></div><div class="compose-footer"><span>실제 시스템에 전송되지 않으며 열람 완료는 공식 인수인계를 의미하지 않습니다.</span><button class="button primary" type="submit">기록 저장</button></div></form></section>';
+    return '<section class="panel compose-panel"><div class="panel-head"><div><h2>보직별 인계 기록 작성</h2><p>작성한 내용은 이 브라우저에 저장되는 실습용 기록입니다.</p></div><a class="text-link" href="list.html">닫기 ×</a></div><form id="compose-form" class="compose-form"><div class="filter-grid"><div class="field"><label for="record-position">보직</label><select id="record-position" name="position" required><option value="">보직 선택</option>' + positions.map(item => '<option value="' + escapeHtml(item) + '">' + escapeHtml(item) + '</option>').join('') + '</select></div><div class="field"><label for="record-date">근무 날짜</label><input id="record-date" name="date" type="date" value="' + localDate() + '" required></div><div class="field"><label for="record-team">근무조</label><select id="record-team" name="team" required>' + ['A','B','C','D','E'].map(team => '<option value="' + team + '조"' + (currentUser().team === team + '조' ? ' selected' : '') + '>' + team + '조</option>').join('') + '</select></div><div class="field"><label for="record-shift">근무 형태</label><select id="record-shift" name="shiftType" required><option>주간</option><option>야간</option></select></div><div class="field"><label for="record-author">작성자</label><input id="record-author" name="author" value="" placeholder="이름을 입력하세요" maxlength="80" required></div><div class="field full"><label for="record-no-issue">설비 상태</label><label><input id="record-no-issue" name="noIssue" type="checkbox" value="yes" style="width:16px;height:16px;padding:0;vertical-align:middle"> 이상없음</label></div><div class="field" id="record-category-field"><label for="record-category">카테고리</label><select id="record-category" name="category" required><option value="">카테고리 선택</option>' + categories.map(item => '<option value="' + item + '">' + item + '</option>').join('') + '</select></div><div class="field" id="record-equipment-field"><label for="record-equipment">설비명</label><input id="record-equipment" name="equipment" maxlength="80" placeholder="예: 보일러 급수펌프 A" required></div><div class="field"><label for="record-importance">중요도</label><select id="record-importance" name="importance" required><option>일반</option><option>중요</option><option>긴급</option></select></div><div class="field full"><label for="record-summary">주요 전달사항</label><textarea id="record-summary" name="summary" rows="2" maxlength="500" required placeholder="다음 근무조에 전달할 핵심 내용을 입력하세요."></textarea></div><div class="field full" id="weekly-inspection-status-field"><label for="record-weekly-not-done">주간점검</label><label><input id="record-weekly-not-done" name="weeklyInspectionNotDone" type="checkbox" value="yes" style="width:16px;height:16px;padding:0;vertical-align:middle"> 미시행</label></div><div class="field full" id="weekly-inspection-field"><label for="record-weekly-inspection">주간점검 사항</label><textarea id="record-weekly-inspection" name="weeklyInspection" rows="2" maxlength="500" required placeholder="어떤 항목을 주간점검했는지 입력하세요."></textarea></div><div class="field full"><label for="record-notes">특이사항</label><textarea id="record-notes" name="notes" rows="3" maxlength="1000" placeholder="확인한 특이사항을 입력하세요."></textarea></div><div class="field full"><label for="record-action-status">조치 상태</label><select id="record-action-status" name="actionStatus" required><option value="">조치 상태 선택</option><option>작업완료</option><option>작업 중</option><option>조치 중</option><option>조치예정</option><option>추후예정</option></select></div><div class="field" id="action-date-field" hidden><label for="record-action-date-mode">추후 조치 예정일</label><select id="record-action-date-mode" name="actionDateMode"><option value="date">날짜 선택</option><option value="undecided">미정</option></select><input id="record-action-date" name="actionDate" type="date" aria-label="추후 조치 날짜"></div><div class="field full"><label for="record-actions">조치사항 내용</label><textarea id="record-actions" name="actions" rows="3" maxlength="1000" placeholder="진행한 조치 또는 후속 확인 사항을 입력하세요."></textarea></div></div><div class="compose-footer"><span>실제 시스템에 전송되지 않으며 열람 완료는 공식 인수인계를 의미하지 않습니다.</span><button class="button primary" type="submit">기록 저장</button></div></form></section>';
   }
   function empty(title, description) { return '<div class="empty"><strong>' + escapeHtml(title) + '</strong><p>' + escapeHtml(description) + '</p></div>'; }
   function detailPage() {
@@ -103,7 +103,7 @@
     if (!record) return '<section class="error-card"><div class="empty-symbol">?</div><p class="eyebrow">RECORD NOT FOUND</p><h1>기록을 찾을 수 없습니다</h1><p>요청한 기록 ID에 해당하는 가상 데이터가 없습니다.<br>목록으로 돌아가 다른 기록을 선택해 주세요.</p><a class="button primary" href="' + backUrl + '">목록으로 돌아가기</a></section>';
     const userRead = isRead(record.id);
     const actionDetails = record.actionStatus === '추후예정' && record.actionDate ? record.actionStatus + ' (' + record.actionDate + ')' : (record.actionStatus || '미지정');
-    const fields = [['보직',record.position || '미지정'],['근무 형태',record.shiftType],['작성자',record.author],['설비명',record.equipment],['카테고리',record.category || '미지정'],['중요도',record.importance],['주요 전달사항',record.summary],['특이사항',record.notes],['조치 상태',actionDetails],['조치사항',record.actions]];
+    const fields = [['보직',record.position || '미지정'],['근무 형태',record.shiftType],['작성자',record.author],['설비명',record.equipment],['카테고리',record.category || '미지정'],['중요도',record.importance],['주요 전달사항',record.summary],['특이사항',record.notes],['주간점검',record.weeklyInspectionNotDone ? '미시행' : (record.weeklyInspection || '미기록')],['조치 상태',actionDetails],['조치사항',record.actions]];
     return '<div class="page-heading"><div><p class="eyebrow">HANDOVER RECORD</p><h1>인수인계 기록 상세</h1><p class="subtitle">기록의 세부 내용을 확인하고 개인 열람 상태를 관리합니다.</p></div></div><section class="panel detail-panel"><div class="detail-hero"><p class="eyebrow">' + escapeHtml(record.team) + ' · ' + escapeHtml(record.shiftType) + '근무</p><h1>' + escapeHtml(record.equipment) + '</h1><div class="record-meta"><span class="date">' + escapeHtml(record.date) + '</span><span>·</span><span>작성 ' + escapeHtml(record.author) + '</span><span>·</span>' + badge(record.importance, importanceClass(record.importance)) + '</div></div><div class="detail-content"><div class="detail-fields"><div class="detail-field"><span class="detail-label">근무 날짜</span><p class="detail-value">' + escapeHtml(record.date) + '</p></div><div class="detail-field"><span class="detail-label">근무조</span><p class="detail-value">' + escapeHtml(record.team) + '</p></div>' + fields.map((field,index) => '<div class="detail-field' + (index > 3 ? ' full' : '') + '"><span class="detail-label">' + escapeHtml(field[0]) + '</span><p class="detail-value">' + escapeHtml(field[1]) + '</p></div>').join('') + '</div><div class="detail-footer"><div class="read-state"><span class="badge ' + (userRead ? 'read' : 'unread') + '">' + (userRead ? '읽음' : '미열람') + '</span><span>열람 상태</span></div><div class="detail-actions">' + (!userRead ? '<button class="button primary" id="mark-read" type="button">열람 완료</button>' : '<button class="button" type="button" disabled>열람 완료됨</button>') + '<a class="button" href="' + backUrl + '" id="back-to-list">목록으로</a></div></div></div></section>';
   }
   function unreadPage() {
@@ -152,25 +152,60 @@
     }
     const composeFormElement = document.getElementById('compose-form');
     if (composeFormElement) {
+      const noIssueInput = document.getElementById('record-no-issue');
+      const categoryInput = document.getElementById('record-category');
+      const equipmentInput = document.getElementById('record-equipment');
+      const categoryField = document.getElementById('record-category-field');
+      const equipmentField = document.getElementById('record-equipment-field');
+      const weeklyNotDoneInput = document.getElementById('record-weekly-not-done');
+      const weeklyInspectionField = document.getElementById('weekly-inspection-field');
+      const weeklyInspectionInput = document.getElementById('record-weekly-inspection');
+      const updateNoIssueFields = () => {
+        const noIssue = noIssueInput.checked;
+        const summaryInput = document.getElementById('record-summary');
+        const actionStatusInput = document.getElementById('record-action-status');
+        const actionDateField = document.getElementById('action-date-field');
+        const actionDateInput = document.getElementById('record-action-date');
+        const actionDateModeInput = document.getElementById('record-action-date-mode');
+        const needsActionDate = actionStatusInput.value === '추후예정';
+        categoryField.hidden = noIssue;
+        equipmentField.hidden = noIssue;
+        categoryInput.disabled = noIssue;
+        equipmentInput.disabled = noIssue;
+        categoryInput.required = !noIssue;
+        equipmentInput.required = !noIssue;
+        summaryInput.required = !noIssue;
+        actionStatusInput.required = !noIssue;
+        actionDateField.hidden = noIssue || !needsActionDate;
+        actionDateInput.required = !noIssue && needsActionDate && actionDateModeInput.value === 'date';
+
+
+        weeklyInspectionField.hidden = weeklyNotDoneInput.checked;
+        weeklyInspectionInput.disabled = weeklyNotDoneInput.checked;
+        weeklyInspectionInput.required = !weeklyNotDoneInput.checked;
+      };
+      noIssueInput.addEventListener('change', updateNoIssueFields);
+      weeklyNotDoneInput.addEventListener('change', updateNoIssueFields);
+      updateNoIssueFields();
       const actionStatusSelect = document.getElementById('record-action-status');
       const actionDateField = document.getElementById('action-date-field');
       const actionDateInput = document.getElementById('record-action-date');
       const actionDateModeSelect = document.getElementById('record-action-date-mode');
       actionStatusSelect.addEventListener('change', () => {
         const needsDate = actionStatusSelect.value === '추후예정';
-        actionDateField.hidden = !needsDate;
+        actionDateField.hidden = noIssueInput.checked || !needsDate;
         if (!needsDate) {
           actionDateModeSelect.value = 'date';
           actionDateInput.value = '';
         }
         const hasDate = actionDateModeSelect.value === 'date';
         actionDateInput.hidden = !hasDate;
-        actionDateInput.required = needsDate && hasDate;
+        actionDateInput.required = !noIssueInput.checked && needsDate && hasDate;
       });
       actionDateModeSelect.addEventListener('change', () => {
         const hasDate = actionDateModeSelect.value === 'date';
         actionDateInput.hidden = !hasDate;
-        actionDateInput.required = actionStatusSelect.value === '추후예정' && hasDate;
+        actionDateInput.required = !noIssueInput.checked && actionStatusSelect.value === '추후예정' && hasDate;
         if (!hasDate) actionDateInput.value = '';
       });
       composeFormElement.addEventListener('submit', event => {
@@ -181,10 +216,10 @@
         const newRecord = {
           id: 'local-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7),
           date: values.date, team: values.team, position: values.position, shiftType: values.shiftType, author: values.author.trim(), createdAt: new Date().toISOString(),
-          equipment: values.equipment.trim(), category: values.category, summary: values.summary.trim(), notes: (values.notes || '').trim(),
+          equipment: values.noIssue ? '이상없음' : values.equipment.trim(), category: values.noIssue ? '이상없음' : values.category, noIssue: Boolean(values.noIssue), summary: values.summary.trim(), weeklyInspection: values.weeklyInspection || '', weeklyInspectionNotDone: Boolean(values.weeklyInspectionNotDone), notes: (values.notes || '').trim(),
           actions: (values.actions || '').trim(), actionStatus: values.actionStatus, actionDate: values.actionDateMode === 'undecided' ? '미정' : (values.actionDate || ''), importance: values.importance, order
         };
-        if (!newRecord.author || !newRecord.position || !newRecord.equipment || !newRecord.summary) return;
+        if (!newRecord.author || !newRecord.position || (!newRecord.noIssue && (!newRecord.equipment || !newRecord.category || !newRecord.summary || !newRecord.actionStatus)) || (!newRecord.weeklyInspectionNotDone && !newRecord.weeklyInspection)) return;
         storageSet(KEYS.created, [...existing, newRecord]);
         storageSet(KEYS.listState, {});
         history.replaceState(null, '', 'list.html?compose=1');
