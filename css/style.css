@@ -204,3 +204,16 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 .auth-control { display:flex; align-items:center; gap:10px; margin-left:8px; }
 .auth-email { max-width:190px; overflow:hidden; color:var(--muted); font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
 @media (max-width:600px) { .auth-card { padding:22px 18px; } .auth-control { margin-left:auto; } .auth-email { display:none; } }
+
+.admin-form-panel { margin-bottom:20px; }
+.admin-record-list { padding:0 20px; }
+.admin-record { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:15px 0; border-bottom:1px solid #edf1f4; }
+.admin-record:last-child { border-bottom:0; }
+.admin-record-main { min-width:0; }
+.admin-record-main > strong { display:block; color:var(--ink); font-size:14px; }
+.admin-record-main > p { overflow:hidden; margin:4px 0 0; color:var(--muted); font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
+.admin-record-actions { display:flex; flex:none; gap:8px; }
+.button.danger { color:#B91C1C; border-color:#FECACA; }
+.button.danger:hover { color:#991B1B; background:#FEF2F2; }
+.toast-error { background:#991B1B; }
+@media (max-width:600px) { .admin-record-list { padding:0 14px; } .admin-record { align-items:flex-start; flex-direction:column; gap:10px; } .admin-record-actions { width:100%; } .admin-record-actions .button { flex:1; } }

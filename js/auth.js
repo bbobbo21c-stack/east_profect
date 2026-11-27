@@ -140,8 +140,22 @@
     topbar.appendChild(control);
   }
 
+  function addAdminLink(user) {
+    if (!window.HANDOVER_ADMIN_USER_ID || user.id !== window.HANDOVER_ADMIN_USER_ID) return;
+    const nav = document.querySelector('.topbar .nav');
+    if (!nav || nav.querySelector('[data-admin-link]')) return;
+    const link = document.createElement('a');
+    link.href = 'admin.html';
+    link.textContent = '관리자';
+    link.dataset.adminLink = 'true';
+    nav.appendChild(link);
+  }
+
   function syncAuthenticatedHeader() {
-    if (authenticatedUser) addLogoutControl(authenticatedUser);
+    if (authenticatedUser) {
+      addLogoutControl(authenticatedUser);
+      addAdminLink(authenticatedUser);
+    }
   }
 
   if (!client) {
