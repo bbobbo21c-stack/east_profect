@@ -26,7 +26,11 @@
     return allUsers.some(user => user.id === chosen) ? chosen : allUsers[0].id;
   }
   function currentUser() { return allUsers.find(user => user.id === currentUserId()) || allUsers[0]; }
-  function isAdmin() { return Boolean(signedInUser && window.HANDOVER_ADMIN_USER_ID && signedInUser.id === window.HANDOVER_ADMIN_USER_ID); }
+  function isAdmin() {
+    const adminId = window.HANDOVER_ADMIN_USER_ID || '';
+    const adminEmail = String(window.HANDOVER_ADMIN_EMAIL || '').trim().toLowerCase();
+    return Boolean(signedInUser && ((adminId && signedInUser.id === adminId) || (adminEmail && String(signedInUser.email || '').trim().toLowerCase() === adminEmail)));
+  }
   function isRead(recordId) { return readRecordIds.has(recordId); }
   function sorted(list) { return list.slice().sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || '').localeCompare(a.createdAt || '') || a.order - b.order); }
   function recordFromDatabase(row) {
@@ -167,7 +171,11 @@
     if (page === 'list') shell(listPage());
     if (page === 'detail') shell(detailPage());
     if (page === 'unread') shell(unreadPage());
-    if (!isAdmin()) root.querySelectorAll('a[href*="compose=1"]').forEach(link => link.remove());
+    if (!isAdmin()) {
+      root.querySelectorAll('a.compose-cta').forEach(link => link.remove());
+      const bannerLink = root.querySelector('.dashboard-banner a[href*="compose=1"]');
+      if (bannerLink) bannerLink.href = 'list.html';
+    }
     bindPageEvents();
   }
   function bindPageEvents() {
@@ -326,7 +334,18 @@
       renderPage();
     } catch (error) {
       console.error('Supabase 데이터 로드 실패:', error);
-      root.innerHTML = '<main class="main"><section class="error-card"><div class="empty-symbol">!</div><h1>인계 기록을 불러오지 못했습니다</h1><p>Supabase 데이터베이스 설정을 확인한 뒤 새로고침해 주세요. 필요한 테이블은 프로젝트의 <strong>supabase/schema.sql</strong>에 있습니다.</p></section></main>';
+      // 데이터베이스 연결 오류가 전체 서비스를 가리지 않도록 기존 화면과 빈 상태를 표시합니다.
+      records = [];
+      readRecordIds = new Set();
+      renderPage();
+      const main = root.querySelector('.main');
+      if (main) {
+        const notice = document.createElement('div');
+        notice.className = 'notice';
+        notice.setAttribute('role', 'alert');
+        notice.textContent = '저장된 기록을 불러오지 못했습니다. 연결을 확인한 뒤 새로고침해 주세요. 화면과 메뉴는 계속 이용할 수 있습니다.';
+        main.prepend(notice);
+      }
     }
   }
 

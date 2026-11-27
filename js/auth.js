@@ -141,7 +141,10 @@
   }
 
   function addAdminLink(user) {
-    if (!window.HANDOVER_ADMIN_USER_ID || user.id !== window.HANDOVER_ADMIN_USER_ID) return;
+    const adminId = window.HANDOVER_ADMIN_USER_ID || '';
+    const adminEmail = String(window.HANDOVER_ADMIN_EMAIL || '').trim().toLowerCase();
+    const isAdmin = (adminId && user.id === adminId) || (adminEmail && String(user.email || '').trim().toLowerCase() === adminEmail);
+    if (!isAdmin) return;
     const nav = document.querySelector('.topbar .nav');
     if (!nav || nav.querySelector('[data-admin-link]')) return;
     const link = document.createElement('a');

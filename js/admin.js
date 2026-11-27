@@ -3,6 +3,7 @@
 
   const client = window.handoverSupabaseClient;
   const adminUserId = window.HANDOVER_ADMIN_USER_ID || '';
+  const adminEmail = String(window.HANDOVER_ADMIN_EMAIL || '').trim().toLowerCase();
   const root = document.getElementById('app');
   let records = [];
   let editingId = null;
@@ -108,14 +109,13 @@
 
   async function initialize() {
     try {
-      if (!adminUserId) throw new Error('관리자 UUID가 설정되지 않았습니다.');
       const { data, error } = await client.auth.getUser();
       if (error) throw error;
-      if (!data.user || data.user.id !== adminUserId) throw new Error('관리자 권한이 없습니다.');
+      if (!data.user || !((adminUserId && data.user.id === adminUserId) || (adminEmail && String(data.user.email || '').trim().toLowerCase() === adminEmail))) throw new Error('관리자 권한이 없습니다.');
       await loadRecords();
       render();
     } catch (error) {
-      shell('<section class="error-card"><div class="empty-symbol">!</div><h1>관리자 화면에 접근할 수 없습니다</h1><p>' + escapeHtml(error.message === '관리자 UUID가 설정되지 않았습니다.' ? '관리자 Auth UUID 설정이 필요합니다.' : '관리자 계정으로 로그인했는지 확인해 주세요.') + '</p><a class="button" href="index.html">대시보드로</a></section>');
+      shell('<section class="error-card"><div class="empty-symbol">!</div><h1>관리자 화면에 접근할 수 없습니다</h1><p>관리자 계정으로 로그인했는지 확인해 주세요.</p><a class="button" href="index.html">대시보드로</a></section>');
       console.error('관리자 화면 초기화 실패:', error);
     }
   }
