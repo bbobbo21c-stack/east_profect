@@ -21,34 +21,10 @@ create table if not exists public.handover_records (
   sort_order integer not null default 0
 );
 
-create table if not exists public.record_read_states (
-  user_id uuid not null references auth.users(id) on delete cascade,
-  record_id text not null references public.handover_records(id) on delete cascade,
-  primary key (user_id, record_id)
-);
-
-alter table public.handover_records enable row level security;
-alter table public.record_read_states enable row level security;
-
+-- 이번 단계에서는 사용자별 정책을 적용하지 않습니다.
+alter table public.handover_records disable row level security;
 drop policy if exists "Signed-in users can read handover records" on public.handover_records;
-create policy "Signed-in users can read handover records"
-  on public.handover_records for select to authenticated
-  using (true);
-
 drop policy if exists "Signed-in users can add handover records" on public.handover_records;
-create policy "Signed-in users can add handover records"
-  on public.handover_records for insert to authenticated
-  with check (auth.uid() is not null);
 
-drop policy if exists "Users can read their own read states" on public.record_read_states;
-create policy "Users can read their own read states"
-  on public.record_read_states for select to authenticated
-  using (user_id = (select auth.uid()));
-
-drop policy if exists "Users can add their own read states" on public.record_read_states;
-create policy "Users can add their own read states"
-  on public.record_read_states for insert to authenticated
-  with check (user_id = (select auth.uid()));
-
+revoke all on public.handover_records from public, anon;
 grant select, insert on public.handover_records to authenticated;
-grant select, insert on public.record_read_states to authenticated;

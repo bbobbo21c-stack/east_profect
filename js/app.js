@@ -2,14 +2,12 @@
   'use strict';
 
   const REFRESH_INTERVAL_MS = 60 * 1000;
-  const KEYS = { user: 'handover.currentUser', lastSync: 'handover.lastSync', listState: 'handover.listState', created: 'handover.createdRecords' };
+  const KEYS = { user: 'handover.currentUser', reads: 'handover.readStates', lastSync: 'handover.lastSync', listState: 'handover.listState', created: 'handover.createdRecords' };
   const supabaseClient = window.handoverSupabaseClient;
   const allUsers = window.MockData.users;
   const categories = ['급수계통', '복수계통', '터빈계통', '환경설비계통'];
   const positions = ['SBO', 'BTG1', 'BTG2', 'TO1', 'TO2', 'BO1', 'BO2'];
   let records = [];
-  let readRecordIds = new Set();
-  let signedInUserId = null;
   const page = document.body.dataset.page;
   const root = document.getElementById('app');
 
@@ -26,7 +24,8 @@
     return allUsers.some(user => user.id === chosen) ? chosen : allUsers[0].id;
   }
   function currentUser() { return allUsers.find(user => user.id === currentUserId()) || allUsers[0]; }
-  function isRead(recordId) { return readRecordIds.has(recordId); }
+  function readStates() { return storageGet(KEYS.reads, {}); }
+  function isRead(recordId, userId) { return Boolean(readStates()[userId || currentUserId()] && readStates()[userId || currentUserId()][recordId]); }
   function sorted(list) { return list.slice().sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || '').localeCompare(a.createdAt || '') || a.order - b.order); }
   function recordFromDatabase(row) {
     return {
@@ -59,18 +58,9 @@
     try { localStorage.removeItem(KEYS.created); } catch (error) { /* 기존 로컬 기록은 다음 로그인 때 다시 동기화합니다. */ }
   }
   async function loadServiceData() {
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser();
-    if (userError) throw userError;
-    if (!userData.user) throw new Error('인증 세션을 확인할 수 없습니다.');
-    signedInUserId = userData.user.id;
-    const [recordsResult, readsResult] = await Promise.all([
-      supabaseClient.from('handover_records').select('*'),
-      supabaseClient.from('record_read_states').select('record_id').eq('user_id', signedInUserId)
-    ]);
+    const recordsResult = await supabaseClient.from('handover_records').select('*');
     if (recordsResult.error) throw recordsResult.error;
-    if (readsResult.error) throw readsResult.error;
     records = sorted((recordsResult.data || []).map(recordFromDatabase));
-    readRecordIds = new Set((readsResult.data || []).map(state => state.record_id));
   }
   function escapeHtml(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
@@ -85,7 +75,7 @@
   }
   function navLink(href, label, target) { return '<a href="' + href + '"' + (page === target ? ' class="active" aria-current="page"' : '') + '>' + label + '</a>'; }
   function shell(content) {
-    root.innerHTML = '<div class="shell"><header class="topbar"><a class="brand" href="index.html"><span class="brand-mark">SP</span><span class="brand-copy"><strong>남부발전 스마트 인수인계</strong><span>SHIFT HANDOVER · MOCK SERVICE</span></span></a><nav class="nav" aria-label="주 메뉴">' + navLink('index.html', '대시보드', 'dashboard') + navLink('list.html', '기록 검색', 'list') + navLink('unread.html', '내 미열람', 'unread') + '</nav></header><main class="main">' + content + '<p class="footer-note">서비스에 저장된 인계 기록 · 실제 사내 시스템과 연결되어 있지 않습니다. 열람 완료는 공식 인수인계 완료를 의미하지 않습니다.</p></main></div>';
+    root.innerHTML = '<div class="shell"><header class="topbar"><a class="brand" href="index.html"><span class="brand-mark">SP</span><span class="brand-copy"><strong>남부발전 스마트 인수인계</strong><span>SHIFT HANDOVER · SERVICE</span></span></a><nav class="nav" aria-label="주 메뉴">' + navLink('index.html', '대시보드', 'dashboard') + navLink('list.html', '기록 검색', 'list') + navLink('unread.html', '내 미열람', 'unread') + '</nav></header><main class="main">' + content + '<p class="footer-note">서비스에 저장된 인계 기록 · 실제 사내 시스템과 연결되어 있지 않습니다. 열람 완료는 공식 인수인계 완료를 의미하지 않습니다.</p></main></div>';
   }
   function counts() {
     return { all: records.length, urgent: records.filter(item => item.importance === '긴급').length, important: records.filter(item => item.importance === '중요').length, unread: records.filter(item => !isRead(item.id)).length, read: records.filter(item => isRead(item.id)).length };
@@ -100,7 +90,7 @@
     const syncText = lastSync ? formatTime(lastSync) : '아직 갱신하지 않았습니다';
     const recent = records.slice(0, 5);
     const positionCards = positions.map(position => '<a class="team-link" href="list.html?position=' + encodeURIComponent(position) + '"><strong>' + escapeHtml(position) + '</strong><span>' + records.filter(record => record.position === position).length + '개 기록 보기 →</span></a>').join('');
-    return '<div class="page-heading"><div class="heading-actions"><div class="updated">마지막 갱신<strong id="last-updated">' + escapeHtml(syncText) + '</strong></div><button class="button" id="refresh-button" type="button"><span class="icon">↻</span>새로고침</button><a class="button primary compose-cta" href="list.html?compose=1">＋ 인계 기록 작성</a></div></div><div class="dashboard-banner"><a href="list.html?compose=1" aria-label="인계일지 작성"><img src="assets/banner.png" alt="교대근무 인계일지"></a></div><div class="notice"><span class="notice-mark">i</span><div><strong>실습용 화면입니다.</strong> 인계 기록은 로그인한 사용자와 공유되며, 실제 사내 시스템과는 연결되어 있지 않습니다.</div></div><section class="stats" aria-label="기록 요약">' + statCard('전체 기록', c.all, '▤', 'list.html', '건') + statCard('긴급 기록', c.urgent, '!', 'list.html?importance=' + encodeURIComponent('긴급'), '건') + statCard('중요 기록', c.important, '◆', 'list.html?importance=' + encodeURIComponent('중요'), '건') + statCard('내 미열람', c.unread, '◷', 'unread.html', '건') + '</section><section class="panel"><div class="panel-head"><div><h2>보직별 인계 기록</h2><p>보직을 선택해 해당 보직의 인계 기록을 확인합니다.</p></div></div><div class="team-grid">' + positionCards + '</div></section><div class="dashboard-grid"><div class="panel"><div class="panel-head"><div><h2>최근 인수인계 기록</h2><p>근무 날짜 기준 최신순입니다.</p></div><a class="text-link" href="list.html">전체 기록 보기 ↗</a></div><div class="record-list">' + (recent.length ? recent.map(item => recordRow(item, 'dashboard')).join('') : empty('표시할 기록이 없습니다.', '기록을 새로고침해 주세요.')) + '</div><div class="panel-head"><div><h2>근무조별 기록</h2><p>근무조를 선택해 해당 기록을 조회합니다.</p></div></div><div class="team-grid">' + ['A','B','C','D','E'].map(team => '<a class="team-link" href="list.html?team=' + team + '%EC%A1%B0"><strong>' + team + '조</strong><span>' + records.filter(item => item.team === team + '조').length + '개 기록 보기 →</span></a>').join('') + '</div></div><aside class="side-stack"><section class="panel"><div class="panel-head"><div><h2>빠른 이동</h2><p>필요한 기록을 바로 찾아보세요.</p></div></div><div class="quick-links"><a class="quick-link" href="list.html"><span>기록 검색 및 필터</span><span>→</span></a><a class="quick-link" href="list.html?importance=%EA%B8%B4%EA%B8%89"><span>긴급 기록 모아보기</span><span>→</span></a><a class="quick-link" href="list.html?importance=%EC%A4%91%EC%9A%94"><span>중요 기록 모아보기</span><span>→</span></a><a class="quick-link" href="unread.html"><span>내 미열람 기록</span><span>→</span></a></div></section><section class="panel"><div class="panel-head"><div><h2>데이터 갱신</h2><p>가상 데이터 원본을 다시 불러옵니다.</p></div></div><div class="sync-body"><div class="sync-status"><span class="sync-dot"></span><span id="sync-message">자동 갱신 · 60초 간격</span></div><p>일정 시점 이후 시연용 기록이 추가됩니다. 자동 갱신은 이 대시보드를 열어 둔 동안 동작합니다.</p></div></section></aside></div>';
+    return '<div class="page-heading"><div class="heading-actions"><div class="updated">마지막 갱신<strong id="last-updated">' + escapeHtml(syncText) + '</strong></div><button class="button" id="refresh-button" type="button"><span class="icon">↻</span>새로고침</button><a class="button primary compose-cta" href="list.html?compose=1">＋ 인계 기록 작성</a></div></div><div class="dashboard-banner"><a href="list.html?compose=1" aria-label="인계일지 작성"><img src="assets/banner.png" alt="교대근무 인계일지"></a></div><div class="notice"><span class="notice-mark">i</span><div><strong>실습용 화면입니다.</strong> 인계 기록은 로그인한 사용자와 공유되며, 실제 사내 시스템과는 연결되어 있지 않습니다.</div></div><section class="stats" aria-label="기록 요약">' + statCard('전체 기록', c.all, '▤', 'list.html', '건') + statCard('긴급 기록', c.urgent, '!', 'list.html?importance=' + encodeURIComponent('긴급'), '건') + statCard('중요 기록', c.important, '◆', 'list.html?importance=' + encodeURIComponent('중요'), '건') + statCard('내 미열람', c.unread, '◷', 'unread.html', '건') + '</section><section class="panel"><div class="panel-head"><div><h2>보직별 인계 기록</h2><p>보직을 선택해 해당 보직의 인계 기록을 확인합니다.</p></div></div><div class="team-grid">' + positionCards + '</div></section><div class="dashboard-grid"><div class="panel"><div class="panel-head"><div><h2>최근 인수인계 기록</h2><p>근무 날짜 기준 최신순입니다.</p></div><a class="text-link" href="list.html">전체 기록 보기 ↗</a></div><div class="record-list">' + (recent.length ? recent.map(item => recordRow(item, 'dashboard')).join('') : empty('표시할 기록이 없습니다.', '기록을 새로고침해 주세요.')) + '</div><div class="panel-head"><div><h2>근무조별 기록</h2><p>근무조를 선택해 해당 기록을 조회합니다.</p></div></div><div class="team-grid">' + ['A','B','C','D','E'].map(team => '<a class="team-link" href="list.html?team=' + team + '%EC%A1%B0"><strong>' + team + '조</strong><span>' + records.filter(item => item.team === team + '조').length + '개 기록 보기 →</span></a>').join('') + '</div></div><aside class="side-stack"><section class="panel"><div class="panel-head"><div><h2>빠른 이동</h2><p>필요한 기록을 바로 찾아보세요.</p></div></div><div class="quick-links"><a class="quick-link" href="list.html"><span>기록 검색 및 필터</span><span>→</span></a><a class="quick-link" href="list.html?importance=%EA%B8%B4%EA%B8%89"><span>긴급 기록 모아보기</span><span>→</span></a><a class="quick-link" href="list.html?importance=%EC%A4%91%EC%9A%94"><span>중요 기록 모아보기</span><span>→</span></a><a class="quick-link" href="unread.html"><span>내 미열람 기록</span><span>→</span></a></div></section><section class="panel"><div class="panel-head"><div><h2>데이터 갱신</h2><p>저장된 인계 기록을 다시 불러옵니다.</p></div></div><div class="sync-body"><div class="sync-status"><span class="sync-dot"></span><span id="sync-message">자동 갱신 · 60초 간격</span></div><p>다른 사용자가 추가한 기록도 갱신 후 반영됩니다. 자동 갱신은 이 대시보드를 열어 둔 동안 동작합니다.</p></div></section></aside></div>';
   }
   function readListState() {
     const saved = storageGet(KEYS.listState, {});
@@ -274,23 +264,14 @@
       });
     }
     const markRead = document.getElementById('mark-read');
-    if (markRead) markRead.addEventListener('click', async () => {
+    if (markRead) markRead.addEventListener('click', () => {
       const id = new URLSearchParams(location.search).get('id');
-      markRead.disabled = true;
-      try {
-        const { error } = await supabaseClient.from('record_read_states').upsert(
-          { user_id: signedInUserId, record_id: id },
-          { onConflict: 'user_id,record_id', ignoreDuplicates: true }
-        );
-        if (error) throw error;
-        await loadServiceData();
-        renderPage();
-        showToast('이 기록을 읽음으로 표시했습니다.');
-      } catch (error) {
-        markRead.disabled = false;
-        showToast('열람 상태를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
-        console.error('열람 상태 저장 실패:', error);
-      }
+      const states = readStates(); const userId = currentUserId();
+      if (!states[userId]) states[userId] = {};
+      states[userId][id] = true;
+      storageSet(KEYS.reads, states);
+      renderPage();
+      showToast('이 기록을 읽음으로 표시했습니다.');
     });
   }
   function refreshData(source) {
