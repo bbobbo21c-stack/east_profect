@@ -2,12 +2,14 @@
   'use strict';
 
   const REFRESH_INTERVAL_MS = 60 * 1000;
-  const KEYS = { user: 'handover.currentUser', reads: 'handover.readStates', lastSync: 'handover.lastSync', listState: 'handover.listState', created: 'handover.createdRecords' };
+  const KEYS = { user: 'handover.currentUser', lastSync: 'handover.lastSync', listState: 'handover.listState', created: 'handover.createdRecords' };
   const supabaseClient = window.handoverSupabaseClient;
   const allUsers = window.MockData.users;
   const categories = ['급수계통', '복수계통', '터빈계통', '환경설비계통'];
   const positions = ['SBO', 'BTG1', 'BTG2', 'TO1', 'TO2', 'BO1', 'BO2'];
   let records = [];
+  let readRecordIds = new Set();
+  let signedInUser = null;
   const page = document.body.dataset.page;
   const root = document.getElementById('app');
 
@@ -24,8 +26,7 @@
     return allUsers.some(user => user.id === chosen) ? chosen : allUsers[0].id;
   }
   function currentUser() { return allUsers.find(user => user.id === currentUserId()) || allUsers[0]; }
-  function readStates() { return storageGet(KEYS.reads, {}); }
-  function isRead(recordId, userId) { return Boolean(readStates()[userId || currentUserId()] && readStates()[userId || currentUserId()][recordId]); }
+  function isRead(recordId) { return readRecordIds.has(recordId); }
   function sorted(list) { return list.slice().sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || '').localeCompare(a.createdAt || '') || a.order - b.order); }
   function recordFromDatabase(row) {
     return {
@@ -58,9 +59,18 @@
     try { localStorage.removeItem(KEYS.created); } catch (error) { /* 기존 로컬 기록은 다음 로그인 때 다시 동기화합니다. */ }
   }
   async function loadServiceData() {
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser();
+    if (userError) throw userError;
+    if (!userData.user || !userData.user.id) throw new Error('로그인 사용자를 확인할 수 없습니다.');
+    signedInUser = { id: userData.user.id, email: userData.user.email || '' };
     const recordsResult = await supabaseClient.from('handover_records').select('*');
     if (recordsResult.error) throw recordsResult.error;
+    const readsResult = await supabaseClient.from('record_read_states')
+      .select('record_id')
+      .eq('user_id', signedInUser.id);
+    if (readsResult.error) throw readsResult.error;
     records = sorted((recordsResult.data || []).map(recordFromDatabase));
+    readRecordIds = new Set((readsResult.data || []).map(state => state.record_id));
   }
   function escapeHtml(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
@@ -264,14 +274,27 @@
       });
     }
     const markRead = document.getElementById('mark-read');
-    if (markRead) markRead.addEventListener('click', () => {
+    if (markRead) markRead.addEventListener('click', async () => {
       const id = new URLSearchParams(location.search).get('id');
-      const states = readStates(); const userId = currentUserId();
-      if (!states[userId]) states[userId] = {};
-      states[userId][id] = true;
-      storageSet(KEYS.reads, states);
-      renderPage();
-      showToast('이 기록을 읽음으로 표시했습니다.');
+      if (!signedInUser || !signedInUser.id) {
+        showToast('로그인 상태를 확인한 뒤 다시 시도해 주세요.');
+        return;
+      }
+      markRead.disabled = true;
+      try {
+        const { error } = await supabaseClient.from('record_read_states').upsert(
+          { user_id: signedInUser.id, user_email: signedInUser.email, record_id: id },
+          { onConflict: 'user_id,record_id', ignoreDuplicates: true }
+        );
+        if (error) throw error;
+        await loadServiceData();
+        renderPage();
+        showToast('이 기록을 읽음으로 표시했습니다.');
+      } catch (error) {
+        markRead.disabled = false;
+        showToast('열람 상태를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        console.error('열람 상태 저장 실패:', error);
+      }
     });
   }
   function refreshData(source) {
